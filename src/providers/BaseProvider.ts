@@ -5,7 +5,7 @@ import { buildRPCPostBody, post } from '../classes/utils/fetchers';
 import { hexToDecimal } from '../classes/utils/hex-to-decimal';
 import { TinyBig, tinyBig } from '../shared/tiny-big/tiny-big';
 import { BlockResponse, BlockTag, RPCBlock } from '../types/Block.types';
-import { Network } from '../types/Network.types';
+import { Network, Networkish } from '../types/Network.types';
 import {
   RPCTransaction,
   RPCTransactionReceipt,
@@ -40,15 +40,36 @@ export abstract class BaseProvider {
   }
 
   /**
-   * Returns the network this provider is connected to
+   * Returns the network this provider is connected to, or information about the network provided
+   *
+   * * Similar to [`ethers.provider.getNetwork`](https://docs.ethers.io/v5/api/providers/provider/#Provider-getNetwork), accepts short names of networks instead of long names
+   *
+   * @param network the network, either chainId or short name, to get information about
+   *
+   * @returns information about the network either specified, or the network the user is currently connected to
    */
-  public async getNetwork(): Promise<Network> {
-    const hexChainId = (await this.post(
-      buildRPCPostBody('eth_chainId', []),
-    )) as string;
+  public async getNetwork(network?: Networkish): Promise<Network> {
+    let chainId, info;
+    if (network) {
+      if (typeof network === 'number') {
+        chainId = network;
+        info = (chainsInfo as any)[network];
+      } else if (typeof network === 'string') {
+        chainId = Object.keys(chainsInfo).find(
+          (key) => (chainsInfo as any)[key][0] === network,
+        );
+        info = (chainsInfo as any)[Number(chainId)];
+      } else if (typeof network === 'object') {
+        
+      }
+    } else {
+      const hexChainId = (await this.post(
+        buildRPCPostBody('eth_chainId', []),
+      )) as string;
 
-    const chainId = hexToDecimal(hexChainId);
-    const info = (chainsInfo as any)[chainId];
+      chainId = hexToDecimal(hexChainId);
+      info = (chainsInfo as any)[chainId];
+    }
     return {
       chainId: Number(chainId),
       name: info[0] || 'unknown',

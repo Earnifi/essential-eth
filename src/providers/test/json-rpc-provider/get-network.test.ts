@@ -1,18 +1,27 @@
 import { ethers } from 'ethers';
 import { JsonRpcProvider } from '../../../index';
 import { fakeUrls, rpcUrls } from '../rpc-urls';
+import { Networkish } from './../../../types/Network.types';
 
 const xdaiRPCUrl = rpcUrls.gno;
 const bscRPCUrl = rpcUrls.bnb;
 
 describe('provider.getNetwork happy path', () => {
-  async function testNetwork(rpcUrl: string) {
+  async function testNetwork(rpcUrl: string, network?: Networkish) {
     const essentialEth = new JsonRpcProvider(rpcUrl);
     const ethersProvider = new ethers.providers.StaticJsonRpcProvider(rpcUrl);
-    const [eeNetwork, ethersNetwork] = await Promise.all([
-      essentialEth.getNetwork(),
-      ethersProvider.getNetwork(),
-    ]);
+    let eeNetwork, ethersNetwork;
+    if (network) {
+      [eeNetwork, ethersNetwork] = await Promise.all([
+        essentialEth.getNetwork(network),
+        ethers.providers.getNetwork(network),
+      ]);
+    } else {
+      [eeNetwork, ethersNetwork] = await Promise.all([
+        essentialEth.getNetwork(),
+        ethersProvider.getNetwork(),
+      ]);
+    }
 
     expect(eeNetwork.chainId).toBe(ethersNetwork.chainId);
     expect(eeNetwork.ensAddress).toBe(ethersNetwork.ensAddress);
@@ -26,6 +35,17 @@ describe('provider.getNetwork happy path', () => {
   });
   it('bsc should match ethers', async () => {
     await testNetwork(bscRPCUrl);
+  });
+  it('should match ethers for a specified chain ID number', () => {
+    const chainIds = [1, 6, 137];
+    chainIds.forEach((id) => {
+    })
+  });
+  it('should match ethers for a specified chain name', () => {
+    const chainNames = [];
+  });
+  it('should match ethers for a specified network', () => {
+    const networkObjects = [];
   });
 });
 
